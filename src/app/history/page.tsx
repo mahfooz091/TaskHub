@@ -18,6 +18,39 @@ interface Transaction {
   fileSize?: number;
 }
 
+function getMockTransactions(): Transaction[] {
+  return [
+    {
+      id: 1,
+      type: "credit",
+      amount: 15.5,
+      description: "Upload approved — Image Set A",
+      status: "completed",
+      date: "2025-12-04",
+      fileName: "image_a.jpg",
+      fileSize: 45.6,
+    },
+    {
+      id: 2,
+      type: "withdrawal",
+      amount: -200,
+      description: "Bank Withdrawal",
+      status: "completed",
+      date: "2025-11-30",
+    },
+    {
+      id: 3,
+      type: "credit",
+      amount: 8.0,
+      description: "Upload approved — Image Set B",
+      status: "pending",
+      date: "2025-12-01",
+      fileName: "image_b.jpg",
+      fileSize: 27.1,
+    },
+  ];
+}
+
 export default function HistoryPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
@@ -36,7 +69,6 @@ export default function HistoryPage() {
 
         setIsLoggedIn(true);
 
-        // Try to fetch from API, fallback to mock data on failure
         try {
           const txns = await walletAPI.getTransactions?.(50);
           if (Array.isArray(txns)) {
@@ -45,7 +77,6 @@ export default function HistoryPage() {
             setTransactions(getMockTransactions());
           }
         } catch (txErr) {
-          console.warn("Failed to fetch transactions, using mock:", txErr);
           setTransactions(getMockTransactions());
         }
       } catch (err) {
@@ -58,39 +89,6 @@ export default function HistoryPage() {
 
     load();
   }, [router]);
-
-  function getMockTransactions(): Transaction[] {
-    return [
-      {
-        id: 1,
-        type: "credit",
-        amount: 15.5,
-        description: "Upload approved — Image Set A",
-        status: "completed",
-        date: "2025-12-04",
-        fileName: "image_a.jpg",
-        fileSize: 45.6,
-      },
-      {
-        id: 2,
-        type: "withdrawal",
-        amount: -200,
-        description: "Bank Withdrawal",
-        status: "completed",
-        date: "2025-11-30",
-      },
-      {
-        id: 3,
-        type: "credit",
-        amount: 8.0,
-        description: "Upload approved — Image Set B",
-        status: "pending",
-        date: "2025-12-01",
-        fileName: "image_b.jpg",
-        fileSize: 27.1,
-      },
-    ];
-  }
 
   if (loading) {
     return (
@@ -143,9 +141,7 @@ export default function HistoryPage() {
             ) : (
               transactions.map((t, idx) => (
                 <motion.div key={t.id} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: idx * 0.03 }} className="bg-white rounded-lg shadow p-4 flex items-start gap-4">
-                  <div className="text-2xl">
-                    {t.type === "credit" ? "✅" : t.type === "withdrawal" ? "🏦" : "❌"}
-                  </div>
+                  <div className="text-2xl">{t.type === "credit" ? "✅" : t.type === "withdrawal" ? "🏦" : "❌"}</div>
                   <div className="flex-1">
                     <div className="flex items-center justify-between gap-4">
                       <div>
