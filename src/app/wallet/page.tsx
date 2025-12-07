@@ -160,7 +160,15 @@ export default function WalletPage() {
                 <p className="text-blue-100 text-sm mb-2">💰 Current Balance</p>
                 <p className="text-4xl font-bold mb-4">₹{walletBalance.toFixed(2)}</p>
                 <div className="w-full h-2 bg-white/20 rounded-full overflow-hidden">
-                  <motion.div initial={{ width: 0 }} animate={{ width: `${(walletBalance / 500) * 100}%` }} transition={{ duration: 1 }} className="h-full bg-linear-to-r from-green-400 to-blue-400" />
+                  {
+                    // safe progress percent (0-100)
+                  }
+                  <motion.div
+                    initial={{ width: 0 }}
+                    animate={{ width: `${Math.max(0, Math.min(100, (walletBalance / 500) * 100))}%` }}
+                    transition={{ duration: 1 }}
+                    className="h-full bg-linear-to-r from-green-400 to-blue-400"
+                  />
                 </div>
                 <p className="text-xs text-blue-100 mt-2">Level: Silver (₹{(500 - walletBalance).toFixed(2)} to Gold)</p>
               </motion.div>

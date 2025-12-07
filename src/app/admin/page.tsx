@@ -21,11 +21,11 @@ export default function AdminDashboard() {
   const router = useRouter();
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [selectedUpload, setSelectedUpload] = useState<any>(null);
+  const [selectedUpload, setSelectedUpload] = useState<PendingUpload | null>(null);
   const [reviewComment, setReviewComment] = useState("");
   const [qualityScore, setQualityScore] = useState(50);
   const [rejectionReason, setRejectionReason] = useState("");
-  const [pendingUploads, setPendingUploads] = useState<any[]>([]);
+  const [pendingUploads, setPendingUploads] = useState<PendingUpload[]>([]);
   const [reviewing, setReviewing] = useState(false);
   const [error, setError] = useState("");
 
@@ -51,7 +51,7 @@ export default function AdminDashboard() {
         setIsAdmin(true);
 
         // Fetch pending uploads from backend
-        const uploads = await reviewAPI.getPending(10);
+        const uploads = (await reviewAPI.getPending(10)) as PendingUpload[];
         setPendingUploads(uploads);
         if (uploads.length > 0) {
           setSelectedUpload(uploads[0]);
@@ -110,10 +110,11 @@ export default function AdminDashboard() {
     setReviewing(true);
     try {
       await reviewAPI.approve(selectedUpload.id, qualityScore, reviewComment, 10);
-      
-      // Remove from pending list
-      setPendingUploads(pendingUploads.filter(u => u.id !== selectedUpload.id));
-      setSelectedUpload(pendingUploads.find(u => u.id !== selectedUpload.id) || null);
+
+      // Remove from pending list (use current state to derive new list)
+      const newList = pendingUploads.filter((u) => u.id !== selectedUpload.id);
+      setPendingUploads(newList);
+      setSelectedUpload(newList[0] || null);
       setReviewComment("");
       setQualityScore(50);
     } catch (err) {
@@ -132,10 +133,11 @@ export default function AdminDashboard() {
     setReviewing(true);
     try {
       await reviewAPI.reject(selectedUpload.id, rejectionReason, reviewComment);
-      
-      // Remove from pending list
-      setPendingUploads(pendingUploads.filter(u => u.id !== selectedUpload.id));
-      setSelectedUpload(pendingUploads.find(u => u.id !== selectedUpload.id) || null);
+
+      // Remove from pending list and select next if available
+      const newList = pendingUploads.filter((u) => u.id !== selectedUpload.id);
+      setPendingUploads(newList);
+      setSelectedUpload(newList[0] || null);
       setReviewComment("");
       setRejectionReason("");
       setQualityScore(50);
@@ -346,13 +348,14 @@ export default function AdminDashboard() {
                         <label className="block text-sm font-bold text-gray-700 mb-2">
                           ⭐ Quality Score
                         </label>
-                        <input
-                          type="range"
-                          min="0"
-                          max="100"
-                          defaultValue="80"
-                          className="w-full"
-                        />
+                          <input
+                            type="range"
+                            min={0}
+                            max={100}
+                            value={qualityScore}
+                            onChange={(e) => setQualityScore(Number(e.target.value))}
+                            className="w-full"
+                          />
                         <p className="text-xs text-gray-600 mt-1">
                           Drag to rate quality (0-100)
                         </p>
