@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import Link from "next/link";
@@ -23,12 +23,38 @@ export default function Upload() {
     }
   }, [router]);
 
-  const handleDragOver = (e: React.DragEvent) => {
+  // Drag & drop handlers (typed)
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
+    e.stopPropagation();
     setIsDragging(true);
   };
 
-  const handleDragLeave = () => {
+  const handleDragEnter = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+
+    const files = e.dataTransfer?.files;
+    if (files && files.length > 0) {
+      setSelectedFile(files[0]);
+      setUploadError("");
+    }
+  };
+
+  // file input change
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.currentTarget.files;
     if (files && files.length > 0) {
@@ -47,7 +73,8 @@ export default function Upload() {
     setUploadError("");
 
     try {
-      const response = await uploadAPI.create(selectedFile, description);
+      // adapt uploadAPI.create to your backend signature
+      await uploadAPI.create(selectedFile, description);
       setUploadSuccess(true);
       setSelectedFile(null);
       setDescription("");
@@ -60,18 +87,6 @@ export default function Upload() {
       setUploadError(err instanceof Error ? err.message : "Upload failed");
     } finally {
       setUploading(false);
-    }
-  };setIsDragging(false);
-    const files = e.dataTransfer.files;
-    if (files.length > 0) {
-      setSelectedFile(files[0]);
-    }
-  };
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.currentTarget.files;
-    if (files && files.length > 0) {
-      setSelectedFile(files[0]);
     }
   };
 
@@ -99,17 +114,17 @@ export default function Upload() {
             {/* Drag and Drop Zone */}
             <div
               onDragOver={handleDragOver}
+              onDragEnter={handleDragEnter}
               onDragLeave={handleDragLeave}
               onDrop={handleDrop}
               className={`border-4 border-dashed rounded-xl p-6 md:p-12 text-center transition-all cursor-pointer ${
-                isDragging
-                  ? "border-blue-600 bg-blue-50"
-                  : "border-gray-300 bg-gray-50 hover:border-blue-400"
+                isDragging ? "border-blue-600 bg-blue-50" : "border-gray-300 bg-gray-50 hover:border-blue-400"
               }`}
             >
               <div className="text-5xl mb-4">📁</div>
               <h3 className="text-2xl font-bold text-gray-900 mb-2">Drag & Drop Your File</h3>
               <p className="text-gray-600 mb-4">or click to browse</p>
+
               <input
                 type="file"
                 onChange={handleFileChange}
@@ -136,6 +151,14 @@ export default function Upload() {
                 <p className="text-green-700 font-semibold">✓ File selected: {selectedFile.name}</p>
                 <p className="text-green-600 text-sm">Size: {(selectedFile.size / 1024).toFixed(2)} KB</p>
               </motion.div>
+            )}
+
+            {uploadError && (
+              <div className="mt-4 text-red-600 font-medium">{uploadError}</div>
+            )}
+
+            {uploadSuccess && (
+              <div className="mt-4 text-green-700 font-medium">Upload successful — redirecting to history...</div>
             )}
 
             {/* Upload Details */}
@@ -165,18 +188,25 @@ export default function Upload() {
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">Description</label>
                 <textarea
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
                   placeholder="Describe your submission..."
                   rows={4}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent resize-none"
-                ></textarea>
+                />
               </div>
             </div>
 
             {/* Action Buttons */}
             <div className="mt-8 flex gap-4">
-              <button className="flex-1 bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" disabled={!selectedFile}>
-                Submit Upload
+              <button
+                onClick={handleUpload}
+                disabled={!selectedFile || uploading}
+                className="flex-1 bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {uploading ? "Uploading..." : "Submit Upload"}
               </button>
+
               <Link href="/" className="flex-1">
                 <button className="w-full border border-gray-300 text-gray-700 px-6 py-3 rounded-lg font-semibold hover:bg-gray-50 transition-colors">
                   Cancel
